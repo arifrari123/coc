@@ -398,28 +398,6 @@
             return emojiMap[key] || '📌';
         }
 
-        async function tryWithProxy(endpoint) {
-            for (let proxy of PROXIES) {
-                try {
-                    const fullUrl = API_BASE + endpoint;
-                    const proxyUrl = proxy + encodeURIComponent(fullUrl);
-                    
-                    const response = await fetch(proxyUrl, {
-                        headers: {
-                            'Authorization': `Bearer ${API_KEY}`
-                        }
-                    });
-
-                    if (response.ok) {
-                        return await response.json();
-                    }
-                } catch (error) {
-                    continue;
-                }
-            }
-            return null;
-        }
-
         async function fetchData() {
             const infoType = document.getElementById('infoType').value;
             const loading = document.getElementById('loading');
@@ -435,7 +413,6 @@
             document.getElementById('error').classList.remove('active');
 
             try {
-                let endpoint = '';
                 let tag = '';
 
                 if (infoType === 'player') {
@@ -444,50 +421,29 @@
                         showError('খেলোয়াড় ট্যাগ প্রবেশ করুন');
                         return;
                     }
-                    endpoint = `/players/%23${tag}`;
                 } else {
                     tag = document.getElementById('clanTag').value.replace('#', '').trim().toUpperCase();
                     if (!tag) {
                         showError('ক্লান ট্যাগ প্রবেশ করুন');
                         return;
                     }
-
-                    if (infoType === 'clan') {
-                        endpoint = `/clans/%23${tag}`;
-                    } else if (infoType === 'clanMembers') {
-                        endpoint = `/clans/%23${tag}/members`;
-                    } else if (infoType === 'currentWar') {
-                        endpoint = `/clans/%23${tag}/currentwar`;
-                    } else if (infoType === 'warLog') {
-                        endpoint = `/clans/%23${tag}/warlog`;
-                    }
                 }
 
-                let data = null;
+                // Vercel API কল করুন (CORS সমস্যা নেই)
+                const response = await fetch(`/api/coc?tag=${encodeURIComponent(tag)}&type=${infoType}`);
 
-                // প্রথমে সরাসরি চেষ্টা করুন
-                try {
-                    const response = await fetch(API_BASE + endpoint, {
-                        headers: {
-                            'Authorization': `Bearer ${API_KEY}`
-                        }
-                    });
-
-                    if (response.ok) {
-                        data = await response.json();
-                    } else if (response.status === 404) {
+                if (!response.ok) {
+                    if (response.status === 404) {
                         showError('ট্যাগ খুঁজে পাওয়া যায়নি। সঠিক ট্যাগ প্রবেশ করুন।');
-                        return;
+                    } else if (response.status === 401) {
+                        showError('API অ্যাক্সেস ত্রুটি।');
+                    } else {
+                        showError('ত্রুটি: ' + response.status);
                     }
-                } catch (e) {
-                    // CORS ত্রুটি, প্রক্সি চেষ্টা করুন
-                    data = await tryWithProxy(endpoint);
-                }
-
-                if (!data) {
-                    showError('API অ্যাক্সেস ব্যর্থ। আপনার ইন্টারনেট সংযোগ চেক করুন।');
                     return;
                 }
+
+                const data = await response.json();
 
                 const titles = {
                     'player': '👤 খেলোয়াড়ের তথ্য',
@@ -499,7 +455,7 @@
 
                 showResult(data, titles[infoType]);
             } catch (error) {
-                showError('ত্রুটি: ' + error.message);
+                showError('সংযোগ ব্যর্থ: ' + error.message);
             }
         }
 
