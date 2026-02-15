@@ -206,6 +206,8 @@
             border-radius: 8px;
             margin-top: 15px;
             display: none;
+            white-space: pre-wrap;
+            word-wrap: break-word;
         }
 
         .error.active {
@@ -271,7 +273,7 @@
 
         <div class="section">
             <div class="section-title">
-                <span emoji>🔍</span>
+                <span>🔍</span>
                 কী তথ্য খুঁজতে চান?
             </div>
             <div class="select-group">
@@ -288,17 +290,15 @@
 
         <div class="section">
             <div class="section-title">
-                <span emoji>📝</span>
+                <span>📝</span>
                 তথ্য প্রবেশ করুন
             </div>
 
-            <!-- Player Input -->
             <div id="playerInput" class="input-group">
                 <label for="playerTag">খেলোয়াড় ট্যাগ (উদা: #SF6TDZX3)</label>
                 <input type="text" id="playerTag" placeholder="#SF6TDZX3">
             </div>
 
-            <!-- Clan Input -->
             <div id="clanInput" class="input-group">
                 <label for="clanTag">ক্লান ট্যাগ (উদা: #8QU8J9LP)</label>
                 <input type="text" id="clanTag" placeholder="#8QU8J9LP">
@@ -311,11 +311,12 @@
             </div>
 
             <div class="error" id="error"></div>
+            <p class="info-text">💡 টিপস: ট্যাগ ছাড়া # চিহ্ন দিতে হবে (যেমন: 8QU8J9LP)</p>
         </div>
 
         <div class="section">
             <div class="section-title">
-                <span emoji>✨</span>
+                <span>✨</span>
                 ফলাফল
             </div>
             <div class="result-box" id="resultBox"></div>
@@ -346,7 +347,7 @@
 
         function showError(message) {
             const errorDiv = document.getElementById('error');
-            errorDiv.textContent = '❌ ' + message;
+            errorDiv.textContent = message;
             errorDiv.classList.add('active');
             document.getElementById('loading').classList.remove('active');
         }
@@ -355,23 +356,26 @@
             const resultBox = document.getElementById('resultBox');
             let html = `<div class="result-item"><div class="result-label" style="width: 100%; border-bottom: 2px solid rgba(111, 168, 111, 0.5); padding-bottom: 15px; margin-bottom: 15px;">📌 ${title}</div></div>`;
 
-            function formatData(obj, prefix = '') {
+            function formatData(obj, depth = 0) {
+                if (depth > 3) return;
+                
                 for (let key in obj) {
                     if (obj[key] === null || obj[key] === undefined) continue;
 
                     if (typeof obj[key] === 'object' && !Array.isArray(obj[key])) {
-                        formatData(obj[key], key);
+                        formatData(obj[key], depth + 1);
                     } else if (Array.isArray(obj[key])) {
                         html += `<div class="result-item">
-                            <div class="result-label">${key}</div>
+                            <div class="result-label">${getEmoji(key)} ${key}</div>
                             <div class="result-value">${obj[key].length} আইটেম</div>
                         </div>`;
                     } else {
                         const emoji = getEmoji(key);
                         const displayKey = key.replace(/([A-Z])/g, ' $1').trim();
+                        const value = String(obj[key]).substring(0, 50);
                         html += `<div class="result-item">
                             <div class="result-label">${emoji} ${displayKey}</div>
-                            <div class="result-value">${obj[key]}</div>
+                            <div class="result-value">${value}</div>
                         </div>`;
                     }
                 }
@@ -385,31 +389,13 @@
 
         function getEmoji(key) {
             const emojiMap = {
-                'name': '👤',
-                'tag': '🏷️',
-                'level': '📊',
-                'townHallLevel': '🏰',
-                'townHallWeaponLevel': '🔫',
-                'trophies': '🏆',
-                'warStars': '⭐',
-                'attackWins': '⚔️',
-                'defenseWins': '🛡️',
-                'clan': '🏰',
-                'league': '🎖️',
-                'type': '📋',
-                'description': '📝',
-                'location': '🌍',
-                'clanLevel': '📈',
-                'members': '👥',
-                'warFrequency': '📅',
-                'warWins': '✅',
-                'warLosses': '❌',
-                'role': '👑',
-                'donations': '📦',
-                'state': '⚔️',
-                'teamSize': '👥',
-                'destructionPercentage': '💥',
-                'capitalLevel': '🏯'
+                'name': '👤', 'tag': '🏷️', 'level': '📊', 'townHallLevel': '🏰',
+                'trophies': '🏆', 'warStars': '⭐', 'attackWins': '⚔️',
+                'defenseWins': '🛡️', 'clan': '🏰', 'league': '🎖️',
+                'clanLevel': '📈', 'members': '👥', 'warFrequency': '📅',
+                'warWins': '✅', 'warLosses': '❌', 'role': '👑',
+                'donations': '📦', 'state': '⚔️', 'teamSize': '👥',
+                'destructionPercentage': '💥', 'capitalLevel': '🏯'
             };
             return emojiMap[key] || '📌';
         }
@@ -420,7 +406,7 @@
             const resultBox = document.getElementById('resultBox');
 
             if (!infoType) {
-                showError('তথ্যের ধরন নির্বাচন করুন');
+                showError('❌ তথ্যের ধরন নির্বাচন করুন');
                 return;
             }
 
@@ -433,31 +419,40 @@
                 let tag = '';
 
                 if (infoType === 'player') {
-                    tag = document.getElementById('playerTag').value.replace('#', '').trim();
+                    tag = document.getElementById('playerTag').value.trim();
                     if (!tag) {
-                        showError('খেলোয়াড় ট্যাগ প্রবেশ করুন');
+                        showError('❌ খেলোয়াড় ট্যাগ প্রবেশ করুন');
                         return;
                     }
-                    endpoint = `/players/%23${tag}`;
+                    if (!tag.startsWith('#')) {
+                        tag = '#' + tag;
+                    }
+                    endpoint = `/players/${encodeURIComponent(tag)}`;
                 } else {
-                    tag = document.getElementById('clanTag').value.replace('#', '').trim();
+                    tag = document.getElementById('clanTag').value.trim();
                     if (!tag) {
-                        showError('ক্লান ট্যাগ প্রবেশ করুন');
+                        showError('❌ ক্লান ট্যাগ প্রবেশ করুন');
                         return;
+                    }
+                    if (!tag.startsWith('#')) {
+                        tag = '#' + tag;
                     }
 
                     if (infoType === 'clan') {
-                        endpoint = `/clans/%23${tag}`;
+                        endpoint = `/clans/${encodeURIComponent(tag)}`;
                     } else if (infoType === 'clanMembers') {
-                        endpoint = `/clans/%23${tag}/members`;
+                        endpoint = `/clans/${encodeURIComponent(tag)}/members`;
                     } else if (infoType === 'currentWar') {
-                        endpoint = `/clans/%23${tag}/currentwar`;
+                        endpoint = `/clans/${encodeURIComponent(tag)}/currentwar`;
                     } else if (infoType === 'warLog') {
-                        endpoint = `/clans/%23${tag}/warlog`;
+                        endpoint = `/clans/${encodeURIComponent(tag)}/warlog`;
                     }
                 }
 
-                const response = await fetch(API_BASE + endpoint, {
+                const url = API_BASE + endpoint;
+                console.log('Fetching:', url);
+
+                const response = await fetch(url, {
                     method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${API_KEY}`,
@@ -466,12 +461,15 @@
                 });
 
                 if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Error:', errorText);
+                    
                     if (response.status === 404) {
-                        showError('ট্যাগ খুঁজে পাওয়া যায়নি। সঠিক ট্যাগ প্রবেশ করুন।');
-                    } else if (response.status === 401) {
-                        showError('API অ্যাক্সেস ত্রুটি।');
+                        showError('❌ ট্যাগ খুঁজে পাওয়া যায়নি।\n\nসঠিক ট্যাগ যাচাই করুন।\nউদাহরণ: #8QU8J9LP অথবা 8QU8J9LP');
+                    } else if (response.status === 401 || response.status === 403) {
+                        showError('❌ API অ্যাক্সেস সমস্যা।\n\nনিশ্চিত করুন ক্লাউডফ্লেয়ার সঠিক সেটআপ করা আছে।');
                     } else {
-                        showError('ত্রুটি: ' + response.status);
+                        showError('❌ ত্রুটি ' + response.status + ':\n' + errorText.substring(0, 200));
                     }
                     return;
                 }
@@ -488,11 +486,11 @@
 
                 showResult(data, titles[infoType]);
             } catch (error) {
-                showError('নেটওয়ার্ক ত্রুটি: ' + error.message);
+                console.error('Error:', error);
+                showError('❌ সংযোগ ত্রুটি:\n' + error.message + '\n\nনিশ্চিত করুন:\n1. ইন্টারনেট সংযোগ আছে\n2. ক্লাউডফ্লেয়ার কাজ করছে');
             }
         }
 
-        // এন্টার কী দিয়ে সার্চ করতে পারবেন
         document.getElementById('playerTag')?.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') fetchData();
         });
