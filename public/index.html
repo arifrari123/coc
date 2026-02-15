@@ -429,21 +429,32 @@
                     }
                 }
 
-                // Vercel API কল করুন (CORS সমস্যা নেই)
-                const response = await fetch(`/api/coc?tag=${encodeURIComponent(tag)}&type=${infoType}`);
+                // API কল করুন
+                const apiUrl = `/api/coc?tag=${encodeURIComponent(tag)}&type=${encodeURIComponent(infoType)}`;
+                
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
 
                 if (!response.ok) {
                     if (response.status === 404) {
-                        showError('ট্যাগ খুঁজে পাওয়া যায়নি। সঠিক ট্যাগ প্রবেশ করুন।');
-                    } else if (response.status === 401) {
-                        showError('API অ্যাক্সেস ত্রুটি।');
+                        showError('❌ ট্যাগ খুঁজে পাওয়া যায়নি। সঠিক ট্যাগ প্রবেশ করুন এবং আবার চেষ্টা করুন।');
+                    } else if (response.status === 400) {
+                        showError('❌ অবৈধ অনুরোধ। সঠিক ফরম্যাটে ট্যাগ দিন।');
+                    } else if (response.status === 403) {
+                        showError('❌ API অ্যাক্সেস অনুমতি দেওয়া হয়নি।');
+                    } else if (response.status === 500) {
+                        showError('❌ সার্ভার ত্রুটি। একটু পরে চেষ্টা করুন।');
                     } else {
-                        showError('ত্রুটি: ' + response.status);
+                        showError(`❌ ত্রুটি ${response.status}: ${data.error || 'কিছু ভুল হয়েছে'}`);
                     }
                     return;
                 }
-
-                const data = await response.json();
 
                 const titles = {
                     'player': '👤 খেলোয়াড়ের তথ্য',
@@ -455,7 +466,8 @@
 
                 showResult(data, titles[infoType]);
             } catch (error) {
-                showError('সংযোগ ব্যর্থ: ' + error.message);
+                console.error('Fetch error:', error);
+                showError('❌ সংযোগ ব্যর্থ: ' + error.message + '\n\nনিশ্চিত করুন আপনি Vercel এ ডিপ্লয় করেছেন।');
             }
         }
 
