@@ -1,1 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clash of Clans Status Checker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px 20px;
+            background: linear-gradient(135deg, #1a2a4a 0%, #2a3a5a 100%);
+            border-radius: 15px;
+            border: 2px solid #4a7c59;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #4a7c59, #6fa86f);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        header p {
+            font-size: 0.95em;
+            color: #b0b0b0;
+            letter-spacing: 1px;
+        }
+
+        .section {
+            background: rgba(30, 40, 60, 0.6);
+            border: 1px solid rgba(74, 124, 89, 0.3);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        .section-title {
+            font-size: 1.3em;
+            margin-bottom: 20px;
+            color: #6fa86f;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: #b0b0b0;
+            font-weight: 500;
+            font-size: 0.95em;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 12px 15px;
+            background: rgba(20, 30, 50, 0.8);
+            border: 2px solid rgba(74, 124, 89, 0.5);
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #6fa86f;
+            background: rgba(20, 30, 50, 1);
+            box-shadow: 0 0 15px rgba(111, 168, 111, 0.3);
+        }
+
+        .input-group {
+            display: none;
+            animation: slideIn 0.4s ease;
+        }
+
+        .input-group.active {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #4a7c59, #6fa86f);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 1.05em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(111, 168, 111, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .result-box {
+            background: rgba(15, 25, 45, 0.8);
+            border: 2px solid rgba(74, 124, 89, 0.5);
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 20px;
+            display: none;
+            min-height: 300px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .result-box.active {
+            display: block;
+            animation: slideIn 0.4s ease;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(74, 124, 89, 0.2);
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        .result-label {
+            color: #6fa86f;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .result-value {
+            color: #e0e0e0;
+            text-align: right;
+            font-weight: 500;
+            word-break: break-all;
+        }
+
+        .loading {
+            text-align: center;
+            color: #6fa86f;
+            font-size: 1.1em;
+            padding: 20px;
+            display: none;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .error {
+            background: rgba(200, 50, 50, 0.2);
+            border: 2px solid rgba(200, 50, 50, 0.5);
+            color: #ff6b6b;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .error.active {
+            display: block;
+        }
+
+        .info-text {
+            font-size: 0.85em;
+            color: #888;
+            margin-top: 10px;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(30, 40, 60, 0.5);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(111, 168, 111, 0.5);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(111, 168, 111, 0.8);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 0 10px;
+            }
+
+            header h1 {
+                font-size: 1.8em;
+            }
+
+            .section {
+                padding: 20px;
+            }
+
+            .result-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .result-value {
+                text-align: left;
+                margin-top: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚔️ CLASH OF CLANS</h1>
+            <p>Status Checker</p>
+        </header>
+
+        <div class="section">
+            <div class="section-title">
+                <span>🔍</span>
+                কী তথ্য খুঁজতে চান?
+            </div>
+            <div>
+                <select id="infoType" onchange="updateInputFields()">
+                    <option value="">-- নির্বাচন করুন --</option>
+                    <option value="player">👤 খেলোয়াড়ের তথ্য</option>
+                    <option value="clan">🏰 ক্লানের তথ্য</option>
+                    <option value="clanMembers">👥 ক্লান সদস্যরা</option>
+                    <option value="currentWar">⚔️ বর্তমান যুদ্ধ</option>
+                    <option value="warLog">📊 যুদ্ধের রেকর্ড</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">
+                <span>📝</span>
+                তথ্য প্রবেশ করুন
+            </div>
+
+            <div id="playerInput" class="input-group">
+                <label for="playerTag">খেলোয়াড় ট্যাগ (উদা: #SF6TDZX3)</label>
+                <input type="text" id="playerTag" placeholder="#SF6TDZX3">
+            </div>
+
+            <div id="clanInput" class="input-group">
+                <label for="clanTag">ক্লান ট্যাগ (উদা: #8QU8J9LP)</label>
+                <input type="text" id="clanTag" placeholder="#8QU8J9LP">
+            </div>
+
+            <button onclick="fetchData()">📡 ডেটা আনুন</button>
+
+            <div class="loading" id="loading">
+                ⏳ অপেক্ষা করুন, ডেটা লোড হচ্ছে...
+            </div>
+
+            <div class="error" id="error"></div>
+            <p class="info-text">💡 গেম থেকে আপনার ট্যাগ কপি করুন এবং এখানে পেস্ট করুন</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">
+                <span>✨</span>
+                ফলাফল
+            </div>
+            <div class="result-box" id="resultBox"></div>
+        </div>
+    </div>
+
+    <script>
+        // ⚔️ Clash of Clans API কনফিগ
+        const API_BASE = 'https://api.clashofclans.com/v1';
+        const API_KEY = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiIsImtpZCI6IjI4YTMzMThmLTAwMDAtYTFlYi03ZmExLTJjNzQzM2M2Y2NhNSJ9.eyJpc3MiOiJzdXBlcmNlbGwiLCJhdWQiOiJzdXBlcmNlbGw6Z2FtZWFwaSIsImp0aSI6IjAxMjkwZTFkLWRiYTUtNGIyMS1iNzcwLWQyMDdjZWNjY2QyNSIsImlhdCI6MTc3MTE0MTU4NSwic3ViIjoiZGV2ZWxvcGVyLzE5YWUzZWFkLTdlZGEtMTdjZi0yM2YyLWU3MDA0NDIyNDU0MSIsInNjb3BlcyI6WyJjbGFzaCJdLCJsaW1pdHMiOlt7InRpZXIiOiJkZXZlbG9wZXIvc2lsdmVyIiwidHlwZSI6InRocm90dGxpbmcifSx7ImNpZHJzIjpbIjE4MC4xNDkuMjM0LjEwMyJdLCJ0eXBlIjoiY2xpZW50In1dfQ.BKJ154ynEXyouFW3PFfyDwVfvjRFCxdVeagJvSqPJgd8JknSuxu5W6TvmgVv-QkOQBgEDzbzuYlAo0kyNgnQkg';
+
+        // CORS সমাধানের জন্য বিকল্প প্রক্সি সার্ভারগুলি
+        const PROXIES = [
+            'https://cors-anywhere.herokuapp.com/',
+            'https://api.codetabs.com/v1/proxy?quest=',
+            'https://thingproxy.freeboard.io/fetch/'
+        ];
+
+        function updateInputFields() {
+            const infoType = document.getElementById('infoType').value;
+            const playerInput = document.getElementById('playerInput');
+            const clanInput = document.getElementById('clanInput');
+
+            playerInput.classList.remove('active');
+            clanInput.classList.remove('active');
+
+            if (infoType === 'player') {
+                playerInput.classList.add('active');
+            } else if (['clan', 'clanMembers', 'currentWar', 'warLog'].includes(infoType)) {
+                clanInput.classList.add('active');
+            }
+
+            document.getElementById('resultBox').classList.remove('active');
+            document.getElementById('error').classList.remove('active');
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = '❌ ' + message;
+            errorDiv.classList.add('active');
+            document.getElementById('loading').classList.remove('active');
+        }
+
+        function showResult(data, title) {
+            const resultBox = document.getElementById('resultBox');
+            let html = `<div class="result-item"><div class="result-label" style="width: 100%; border-bottom: 2px solid rgba(111, 168, 111, 0.5); padding-bottom: 15px; margin-bottom: 15px;">📌 ${title}</div></div>`;
+
+            function formatData(obj, prefix = '') {
+                for (let key in obj) {
+                    if (obj[key] === null || obj[key] === undefined) continue;
+
+                    if (typeof obj[key] === 'object' && !Array.isArray(obj[key])) {
+                        formatData(obj[key], key);
+                    } else if (Array.isArray(obj[key])) {
+                        html += `<div class="result-item">
+                            <div class="result-label">${key}</div>
+                            <div class="result-value">${obj[key].length} আইটেম</div>
+                        </div>`;
+                    } else {
+                        const emoji = getEmoji(key);
+                        const displayKey = key.replace(/([A-Z])/g, ' $1').trim();
+                        html += `<div class="result-item">
+                            <div class="result-label">${emoji} ${displayKey}</div>
+                            <div class="result-value">${obj[key]}</div>
+                        </div>`;
+                    }
+                }
+            }
+
+            formatData(data);
+            resultBox.innerHTML = html;
+            resultBox.classList.add('active');
+            document.getElementById('loading').classList.remove('active');
+        }
+
+        function getEmoji(key) {
+            const emojiMap = {
+                'name': '👤', 'tag': '🏷️', 'level': '📊', 'townHallLevel': '🏰',
+                'townHallWeaponLevel': '🔫', 'trophies': '🏆', 'warStars': '⭐',
+                'attackWins': '⚔️', 'defenseWins': '🛡️', 'clan': '🏰',
+                'league': '🎖️', 'type': '📋', 'description': '📝', 'location': '🌍',
+                'clanLevel': '📈', 'members': '👥', 'warFrequency': '📅',
+                'warWins': '✅', 'warLosses': '❌', 'role': '👑', 'donations': '📦',
+                'state': '⚔️', 'teamSize': '👥', 'destructionPercentage': '💥',
+                'capitalLevel': '🏯'
+            };
+            return emojiMap[key] || '📌';
+        }
+
+        async function fetchData() {
+            const infoType = document.getElementById('infoType').value;
+            const loading = document.getElementById('loading');
+            const resultBox = document.getElementById('resultBox');
+
+            if (!infoType) {
+                showError('তথ্যের ধরন নির্বাচন করুন');
+                return;
+            }
+
+            loading.classList.add('active');
+            resultBox.classList.remove('active');
+            document.getElementById('error').classList.remove('active');
+
+            try {
+                let tag = '';
+
+                if (infoType === 'player') {
+                    tag = document.getElementById('playerTag').value.replace('#', '').trim().toUpperCase();
+                    if (!tag) {
+                        showError('খেলোয়াড় ট্যাগ প্রবেশ করুন');
+                        return;
+                    }
+                } else {
+                    tag = document.getElementById('clanTag').value.replace('#', '').trim().toUpperCase();
+                    if (!tag) {
+                        showError('ক্লান ট্যাগ প্রবেশ করুন');
+                        return;
+                    }
+                }
+
+                // Vercel API কল করুন (CORS সমস্যা নেই)
+                const response = await fetch(`/api/coc?tag=${encodeURIComponent(tag)}&type=${infoType}`);
+
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        showError('ট্যাগ খুঁজে পাওয়া যায়নি। সঠিক ট্যাগ প্রবেশ করুন।');
+                    } else if (response.status === 401) {
+                        showError('API অ্যাক্সেস ত্রুটি।');
+                    } else {
+                        showError('ত্রুটি: ' + response.status);
+                    }
+                    return;
+                }
+
+                const data = await response.json();
+
+                const titles = {
+                    'player': '👤 খেলোয়াড়ের তথ্য',
+                    'clan': '🏰 ক্লানের তথ্য',
+                    'clanMembers': '👥 ক্লান সদস্যরা',
+                    'currentWar': '⚔️ বর্তমান যুদ্ধ',
+                    'warLog': '📊 যুদ্ধের রেকর্ড'
+                };
+
+                showResult(data, titles[infoType]);
+            } catch (error) {
+                showError('সংযোগ ব্যর্থ: ' + error.message);
+            }
+        }
+
+        // এন্টার কী দিয়ে সার্চ করতে পারবেন
+        document.getElementById('playerTag')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') fetchData();
+        });
+
+        document.getElementById('clanTag')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') fetchData();
+        });
+    </script>
+</body>
+</html>
